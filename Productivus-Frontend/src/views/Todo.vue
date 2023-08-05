@@ -36,10 +36,16 @@
             >
             </v-list-item>
           </v-list>
+          <v-footer>
+            <v-btn>
+              <v-icon>mdi-plus</v-icon>
+              <span class="mx-2">New List</span>
+            </v-btn>
+          </v-footer>
         </v-navigation-drawer>
 
         <v-main>
-          <v-sheet class="pa-5">
+          <v-container class="pa-5" fluid>
             <v-row
               v-for="todo in todoLists.find(
                 (list) => list.id === currentTodoListId
@@ -48,17 +54,16 @@
               align-content="center"
               class="mx-5"
             >
-              <v-col>
-                <div width="20px">
-                  <v-checkbox
-                    v-model="todo.done"
-                    @click="todo.done = !todo.done"
-                    direction="vertical"
-                    density="compact"
-                  ></v-checkbox>
-                </div>
-              </v-col>
-              <v-col>
+              <div style="width: 40px">
+                <v-checkbox
+                  v-model="todo.done"
+                  @click="todo.done = !todo.done"
+                  direction="vertical"
+                  density="compact"
+                ></v-checkbox>
+              </div>
+
+              <v-col class="text-center">
                 <p
                   class="text-h6"
                   :style="{
@@ -68,13 +73,12 @@
                   {{ todo.title }}
                 </p>
               </v-col>
-              <v-col>
-                <v-btn
-                  icon="mdi-delete"
-                  flat
-                  @click="deleteTodo(todo.id)"
-                ></v-btn>
-              </v-col>
+
+              <v-btn
+                icon="mdi-delete"
+                flat
+                @click="deleteTodo(todo.id)"
+              ></v-btn>
             </v-row>
 
             <v-row>
@@ -84,11 +88,11 @@
                   v-model="newTodo"
                 ></v-text-field>
               </v-col>
-              <v-col cols="1" class="my-2">
+              <v-col cols="12" sm="2" class="my-2 text-center">
                 <v-btn color="primary" @click="addTodo">Add</v-btn>
               </v-col>
             </v-row>
-          </v-sheet>
+          </v-container>
         </v-main>
       </v-layout>
     </v-sheet>
