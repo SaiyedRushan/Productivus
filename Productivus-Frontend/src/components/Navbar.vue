@@ -1,16 +1,15 @@
 <template>
   <v-app-bar color="black" app>
     <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-    <v-toolbar-title>
-      <router-link to="/" style="text-decoration: none; color: inherit"
-        >Productivus</router-link
-      ></v-toolbar-title
-    >
+    <v-toolbar-title> <router-link to="/" style="text-decoration: none; color: inherit">Productivus</router-link></v-toolbar-title>
     <v-spacer></v-spacer>
 
     <v-menu v-if="user">
       <template v-slot:activator="{ props }">
-        <v-btn icon="mdi-account" v-bind="props"> </v-btn>
+        <v-btn v-bind="props" icon>
+          <img v-if="user?.photoURL" :src="user?.photoURL" alt="" height="40" style="border-radius: 50%" />
+          <v-icon v-else icon="mdi-account"></v-icon>
+        </v-btn>
       </template>
 
       <v-card min-width="300">
@@ -27,14 +26,7 @@
 
   <v-navigation-drawer v-model="drawer" app>
     <v-list>
-      <v-list-item
-        v-for="item in navItems"
-        :key="item.title"
-        :title="item.title"
-        :prepend-icon="item.icon"
-        :to="item.to"
-      >
-      </v-list-item>
+      <v-list-item v-for="item in navItems" :key="item.title" :title="item.title" :prepend-icon="item.icon" :to="item.to"> </v-list-item>
     </v-list>
   </v-navigation-drawer>
 </template>

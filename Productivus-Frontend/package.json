@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mdi/font": "7.0.96",
+    "@vuepic/vue-datepicker": "^5.4.0",
     "core-js": "^3.29.0",
     "firebase": "^9.23.0",
     "firebaseui": "^6.0.2",
