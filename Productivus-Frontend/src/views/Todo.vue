@@ -22,16 +22,30 @@
 
         <v-navigation-drawer v-model="todoListDrawer">
           <v-list>
-            <v-list-item v-for="item in todoLists" :key="item.title" :title="item.title" link @click="currentTodoListId = item.id">
+            <v-list-item
+              v-for="item in todoLists"
+              :key="item.title"
+              :title="item.title"
+              link
+              @click="currentTodoListId = item.id"
+              :class="{ 'highlighted-item': item.id === currentTodoListId }"
+            >
             </v-list-item>
           </v-list>
           <v-footer>
-            <v-btn>
+            <v-btn @click="createNewListDialog = true" color="primary">
               <v-icon>mdi-plus</v-icon>
               <span class="mx-2">New List</span>
             </v-btn>
           </v-footer>
         </v-navigation-drawer>
+
+        <v-dialog v-model="createNewListDialog" width="400px">
+          <v-card class="pa-5">
+            <v-text-field label="List Name" v-model="newListName"></v-text-field>
+            <v-btn color="primary" @click="createNewList"> Create </v-btn>
+          </v-card>
+        </v-dialog>
 
         <v-main>
           <v-container class="pa-5" fluid>
@@ -42,7 +56,7 @@
               class="mx-5"
             >
               <div style="width: 40px">
-                <v-checkbox v-model="todo.done" @click="todo.done = !todo.done" direction="vertical" density="compact"></v-checkbox>
+                <v-checkbox v-model="todo.done" @click="markComplete(todo)" direction="vertical" density="compact"></v-checkbox>
               </div>
 
               <v-col class="text-center">
@@ -54,6 +68,11 @@
                 >
                   {{ todo.title }}
                 </p>
+              </v-col>
+
+              <v-col style="max-width: 300px">
+                <!-- <v-label>Due Date</v-label> -->
+                <VueDatePicker v-model="todo.dueDate"></VueDatePicker>
               </v-col>
 
               <v-btn icon="mdi-delete" flat @click="deleteTodo(todo.id)"></v-btn>
@@ -88,63 +107,143 @@ import { getAuth } from "firebase/auth";
 import { onMounted } from "vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
+import makeHTTPRequest from "../utils/fetch.js";
 
 const datepicker = ref(null);
 const dueDate = ref(null);
-const currentTodoListId = ref(1);
+const currentTodoListId = ref(-1);
 const newTodo = ref("");
 const todoListDrawer = ref(false);
-const generalTodos = ref([]);
-const todoLists = ref([{ id: 1, title: "General", todos: generalTodos.value }]);
+const todoLists = ref([{ id: -1, title: "General", todos: [] }]);
 const user = ref(null);
+const allTodos = ref([]);
+const createNewListDialog = ref(false);
+const newListName = ref("");
 
 onMounted(async () => {
   user.value = getAuth().currentUser;
   getTodoLists();
-  getAllTodos();
 });
 
 // gets all the todos for all the lists for the current user
 async function getAllTodos() {
-  let data = await fetch(`/api/todos/getAllTodos/${user.value.uid}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+  let data = await makeHTTPRequest(`/api/todos/getAllTodos/${user.value.uid}`, "GET");
+
+  allTodos.value = data.map((todo) => {
+    return {
+      id: todo.TodoId,
+      title: todo.TodoText,
+      done: todo.IsCompleted,
+      dueDate: todo.DueDate,
+      ListId: todo.ListId,
+    };
   });
-  console.log(await data.json());
+  console.log(allTodos.value);
 }
 
 // gets all the lists for the current user
 async function getTodoLists() {
-  let data = await fetch(`/api/todos/getTodoLists/${user.value.uid}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  console.log(await data.json());
+  await getAllTodos();
+  let data = await makeHTTPRequest(`/api/todos/getTodoLists/${user.value.uid}`, "GET");
+
+  if (data?.length > 0) {
+    todoLists.value = data.map((list) => {
+      return {
+        id: list.ListId,
+        title: list.ListName,
+        todos: [],
+      };
+    });
+
+    currentTodoListId.value = todoLists.value[0].id;
+
+    // get the todos for each list
+    todoLists.value.forEach((list) => {
+      list.todos = allTodos.value.filter((todo) => todo.ListId == list.id);
+    });
+
+    console.log(todoLists.value);
+  }
 }
 
 async function addTodo() {
   let todos = todoLists.value.find((list) => list.id === currentTodoListId.value).todos;
 
-  todos.push({
-    id: todos.length + 1,
-    title: newTodo.value,
-    done: false,
-  });
+  let data = false;
 
-  newTodo.value = "";
+  // if this is the first todo ever added, insert this list in the backend
+  if (currentTodoListId.value === -1) {
+    let currentTodoListName = todoLists.value.find((list) => list.id === currentTodoListId.value).title;
+
+    data = await makeHTTPRequest(`/api/todos/addTodoList/${user.value.uid}`, "POST", {
+      listName: currentTodoListName,
+    });
+    console.log(data);
+    currentTodoListId.value = data[0].ListId;
+
+    // update the todolists.value
+    // todoLists.value = [{id: data.ListId, title: data.ListName, todos: []}}]
+  } else {
+    data = true;
+  }
+
+  // if the list was added successfully or if it already existed
+  if (data) {
+    let addedTodo = await makeHTTPRequest(`/api/todos/addTodo/${user.value.uid}/${currentTodoListId.value}`, "POST", {
+      todoText: newTodo.value,
+      dueDate: dueDate.value,
+    });
+
+    console.log(addedTodo);
+
+    // if the todo was added successfully
+    if (addedTodo) {
+      todos.push({
+        id: addedTodo[0].TodoId,
+        title: newTodo.value,
+        done: false,
+      });
+      newTodo.value = "";
+      dueDate.value = null;
+    }
+  }
 }
 
 async function deleteTodo(id) {
   let todos = todoLists.value.find((list) => list.id === currentTodoListId.value).todos;
 
-  todos.splice(
-    todos.findIndex((todo) => todo.id === id),
-    1
-  );
+  let deletedTodo = await makeHTTPRequest(`/api/todos/deleteTodo/${id}`, "DELETE");
+  if (deletedTodo) {
+    todos.splice(
+      todos.findIndex((todo) => todo.id === id),
+      1
+    );
+  }
+}
+
+async function markComplete(todo) {
+  todo.done = !todo.done;
+  await makeHTTPRequest(`/api/todos/markComplete/${todo.id}`, "PUT", {
+    isCompleted: todo.done,
+  });
+}
+
+async function createNewList() {
+  let data = await makeHTTPRequest(`/api/todos/addTodoList/${user.value.uid}`, "POST", {
+    listName: newListName.value,
+  });
+
+  if (data) {
+    todoLists.value.push({
+      id: data[0].ListId,
+      title: newListName.value,
+      todos: [],
+    });
+
+    newListName.value = "";
+    createNewListDialog.value = false;
+    currentTodoListId.value = data[0].ListId;
+  }
 }
 
 async function clearAll() {
@@ -153,3 +252,9 @@ async function clearAll() {
   todos.splice(0, todos.length);
 }
 </script>
+
+<style>
+.highlighted-item {
+  background-color: #f0f0f0; /* Set the background color to highlight the selected item */
+}
+</style>

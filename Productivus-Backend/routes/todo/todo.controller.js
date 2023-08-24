@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getTodoLists, getAllTodos, addTodo } = require("./todo.service");
+const { getTodoLists, getAllTodos, addTodo, addTodoList, deleteTodo, markComplete } = require("./todo.service");
 
 router.get("/getAllTodos/:userId", async (req, res) => {
   try {
@@ -22,9 +22,39 @@ router.get("/getTodoLists/:userId", async (req, res) => {
   }
 });
 
-router.post("/addTodo", async (req, res) => {
+router.post("/addTodo/:userId/:todoListId", async (req, res) => {
   try {
-    const result = await addTodo(req.body.userId, req.body.todoListId, req.body.todoText, req.body.dueDate, req.body.isCompleted);
+    const result = await addTodo(req.params.userId, req.params.todoListId, req.body.todoText, req.body.dueDate);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error executing SQL query", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/addTodoList/:userId", async (req, res) => {
+  try {
+    const result = await addTodoList(req.params.userId, req.body.listName);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error executing SQL query", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/deleteTodo/:todoId", async (req, res) => {
+  try {
+    const result = await deleteTodo(req.params.todoId);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error executing SQL query", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/markComplete/:todoId", async (req, res) => {
+  try {
+    const result = await markComplete(req.params.todoId, req.body.isCompleted);
     res.json(result.recordset);
   } catch (err) {
     console.error("Error executing SQL query", err);
