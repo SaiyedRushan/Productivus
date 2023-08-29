@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getTodoLists, getAllTodos, addTodo, addTodoList, deleteTodo, markComplete } = require("./todo.service");
+const { getTodoLists, getAllTodos, addTodo, addTodoList, deleteTodo, markComplete } = require("../services/todo.service");
 
 router.get("/getAllTodos/:userId", async (req, res) => {
   try {

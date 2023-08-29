@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
 const port = 8080;
-const api = require("./routes/api");
+const api = require("./src/routes/api");
 
 app.use(morgan("dev"));
 app.use(express.json());
