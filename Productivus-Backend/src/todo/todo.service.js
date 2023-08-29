@@ -1,4 +1,4 @@
-const dbConnectionPool = require("../../dbConnectionPool");
+const dbConnectionPool = require("../dbConnectionPool");
 
 const getAllTodos = async (userId) => {
   const pool = await dbConnectionPool;
