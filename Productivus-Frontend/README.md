@@ -1,4 +1,4 @@
-# base
+Before running the project, you'll need to configure some environment variables for firebase to work. After configuring these env variables, you can run npm install to install the dependencies and then npm run dev to start the localhost server.
 
 ## Project setup
 
